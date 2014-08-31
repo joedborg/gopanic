@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
     "fmt"
+    "net"
     "net/http"
 )
 
@@ -16,5 +18,14 @@ func handle_panic(w http.ResponseWriter, r *http.Request) {
 func main() {
     http.HandleFunc("/", handle_all)
     http.HandleFunc("/panic", handle_panic)
-    http.ListenAndServe(":9999", nil)
+    go http.ListenAndServe(":9999", nil)
+
+	ln, err := net.ListenPacket("udp", ":9998")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+	
+
+
 }
