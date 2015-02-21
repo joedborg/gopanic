@@ -9,6 +9,7 @@ import (
 )
 
 const KEYWORD string = "Panic!"
+const HTTP_PORT string = ":9999"
 const UDP_PORT int = 9998
 const BUFFER_SIZE = 64000
 
@@ -69,7 +70,7 @@ func do_panic() {
 // listening for UDP.
 func main() {
 	http.HandleFunc("/", handle_http)
-	go http.ListenAndServe(":9999", nil)
+	go http.ListenAndServe(HTTP_PORT, nil)
 	for {
 		time.Sleep(100 * time.Millisecond)
 		handle_udp()
