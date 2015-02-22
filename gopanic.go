@@ -11,7 +11,7 @@ import (
 const KEYWORD string = "Panic!"
 const HTTP_PORT string = ":9999"
 const UDP_PORT int = 9998
-const BUFFER_SIZE = 64000
+const BUFFER_SIZE int = 64000
 
 // Generic error handle.
 func error_check(err error) {
