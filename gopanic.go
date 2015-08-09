@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os/exec"
 	"time"
 )
 
@@ -63,8 +64,10 @@ func propagate_panic() {
 }
 
 // Template for what to do in the case of a panic.
+// By default, we'll try to halt the system.
 func do_panic() {
-
+    proc := exec.Command("shutdown", "-H", "now")
+		proc.Start()
 }
 
 // Entry point.  Start the HTTP server and start
