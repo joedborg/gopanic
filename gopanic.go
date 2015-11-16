@@ -1,82 +1,104 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"github.com/op/go-logging"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 )
 
-const KEYWORD string = "Panic!"
-const HTTP_PORT string = ":9999"
-const UDP_PORT int = 9998
-const BUFFER_SIZE int = 64000
+// Key word sent to trigger panic.
+const Keyword string = "Panic!"
+
+// HTTP port to listen on.
+const HTTPPort string = ":9999"
+
+// UDP port to listen on.
+const UDPPort int = 9998
+
+// Buffer size.
+const BufferSize int = 64000
+
+var log = logging.MustGetLogger("gopanic")
 
 // Generic error handle.
-func error_check(err error) {
+func errorCheck(err error) {
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
 // Called when there is an HTTP request to the server, all
 // we need to do is propagate the panic and then run the
 // panic.
-func handle_http(w http.ResponseWriter, r *http.Request) {
-	propagate_panic()
-	do_panic()
+func handleHTTP(w http.ResponseWriter, r *http.Request) {
+	propagatePanic()
+	doPanic()
 }
 
 // Listen for UDP packets on the broadcast address, if
-// this matches KEYWORD, then run the panic.
-func handle_udp() {
+// this matches Keyword, then run the panic.
+func handleUDP() {
 	conn, err := net.ListenUDP("udp4", &net.UDPAddr{
 		IP:   net.IPv4(0, 0, 0, 0),
-		Port: UDP_PORT,
+		Port: UDPPort,
 	})
-	error_check(err)
+	errorCheck(err)
 	defer conn.Close()
 
-	var buff []byte = make([]byte, BUFFER_SIZE)
+	var buff = make([]byte, BufferSize)
 	n, addr, err := conn.ReadFromUDP(buff)
-	error_check(err)
+	errorCheck(err)
 
-	if string(buff[0:n]) == KEYWORD {
-		fmt.Println("Accepting panic from ", addr)
-		do_panic()
+	if string(buff[0:n]) == Keyword {
+		log.Info("Accepting panic from %s", addr)
+		doPanic()
 	}
 }
 
 // Propagate the panic to the broadcast address, so that
 // all hosts on this network can see.
-func propagate_panic() {
-	fmt.Println("Propagating panic to broadcast")
+func propagatePanic() {
+	log.Info("Propagating panic to broadcast")
 	conn, err := net.DialUDP("udp4", nil, &net.UDPAddr{
 		IP:   net.IPv4(255, 255, 255, 255),
-		Port: UDP_PORT,
+		Port: UDPPort,
 	})
-	error_check(err)
+	errorCheck(err)
 	defer conn.Close()
-	_, err = conn.Write([]byte(KEYWORD))
-	error_check(err)
+	_, err = conn.Write([]byte(Keyword))
+	errorCheck(err)
 }
 
 // Template for what to do in the case of a panic.
 // By default, we'll try to halt the system.
-func do_panic() {
-    proc := exec.Command("shutdown", "-H", "now")
-		proc.Start()
+func doPanic() {
+	proc := exec.Command("shutdown", "-H", "now")
+	proc.Start()
+}
+
+func setupLogger() {
+	format := logging.MustStringFormatter(
+		"(%{color}%{time:2006/01/02 15:04:05.999 -07:00}) [%{level}]:%{color:reset} %{message}",
+	)
+	backend := logging.NewLogBackend(os.Stderr, "", 0)
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	backendLeveled := logging.AddModuleLevel(backend)
+	backendLeveled.SetLevel(logging.ERROR, "")
+	logging.SetBackend(backendLeveled, backendFormatter)
 }
 
 // Entry point.  Start the HTTP server and start
 // listening for UDP.
 func main() {
-	http.HandleFunc("/", handle_http)
-	go http.ListenAndServe(HTTP_PORT, nil)
+	setupLogger()
+	log.Info("Starting gopanic daemon")
+	http.HandleFunc("/", handleHTTP)
+	go http.ListenAndServe(HTTPPort, nil)
 	for {
 		time.Sleep(100 * time.Millisecond)
-		handle_udp()
+		handleUDP()
 	}
 }
