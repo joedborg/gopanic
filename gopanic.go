@@ -21,6 +21,7 @@ const UDPPort int = 9998
 // Buffer size.
 const BufferSize int = 64000
 
+// Instantiate the logger.
 var log = logging.MustGetLogger("gopanic")
 
 // Generic error handle.
@@ -79,6 +80,7 @@ func doPanic() {
 	proc.Start()
 }
 
+// Setup the formatter and level of the logger.
 func setupLogger() {
 	format := logging.MustStringFormatter(
 		"(%{color}%{time:2006/01/02 15:04:05.999 -07:00}) [%{level}]:%{color:reset} %{message}",
