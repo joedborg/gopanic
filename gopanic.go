@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/op/go-logging"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"time"
 )
 
@@ -13,7 +15,7 @@ import (
 const Keyword string = "Panic!"
 
 // HTTP port to listen on.
-const HTTPPort string = ":9999"
+const HTTPPort int = 9999
 
 // UDP port to listen on.
 const UDPPort int = 9998
@@ -83,7 +85,7 @@ func doPanic() {
 // Setup the formatter and level of the logger.
 func setupLogger() {
 	format := logging.MustStringFormatter(
-		"(%{color}%{time:2006/01/02 15:04:05.999 -07:00}) [%{level}]:%{color:reset} %{message}",
+		"(%{time:2006/01/02 15:04:05.999 -07:00}) %{color}[%{level}]%{color:reset}: %{message}",
 	)
 	backend := logging.NewLogBackend(os.Stderr, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, format)
@@ -97,8 +99,13 @@ func setupLogger() {
 func main() {
 	setupLogger()
 	log.Info("Starting gopanic daemon")
+	currentUser, error := user.Current()
+	errorCheck(error)
+	if currentUser.Uid != "0" {
+		log.Warning("Not running as root user (%s), this means no halt on panic.", currentUser.Username)
+	}
 	http.HandleFunc("/", handleHTTP)
-	go http.ListenAndServe(HTTPPort, nil)
+	go http.ListenAndServe(fmt.Sprintf(":%d", HTTPPort), nil)
 	for {
 		time.Sleep(100 * time.Millisecond)
 		handleUDP()
