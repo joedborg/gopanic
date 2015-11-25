@@ -99,8 +99,8 @@ func setupLogger() {
 func main() {
 	setupLogger()
 	log.Info("Starting gopanic daemon")
-	currentUser, error := user.Current()
-	errorCheck(error)
+	currentUser, err := user.Current()
+	errorCheck(err)
 	if currentUser.Uid != "0" {
 		log.Warning("Not running as root user (%s), this means no halt on panic.", currentUser.Username)
 	}
