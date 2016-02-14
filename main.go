@@ -11,16 +11,16 @@ import (
 	"time"
 )
 
-// Key word sent to trigger panic.
+// Keyword sent to trigger panic.
 const Keyword string = "Panic!"
 
-// HTTP port to listen on.
+// HTTPPort to listen on.
 const HTTPPort int = 9999
 
-// UDP port to listen on.
+// UDPPort to listen on.
 const UDPPort int = 9998
 
-// Buffer size.
+// BufferSize for UDP buffer.
 const BufferSize int = 64000
 
 // Instantiate the logger.
